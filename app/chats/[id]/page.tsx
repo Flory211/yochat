@@ -359,5 +359,3 @@ export default function ChatPage() {
     </Suspense>
   );
 }
-
-export const dynamic = 'force-dynamic';
