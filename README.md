@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ЁЧат - Чат для онлайн-школы Ёшкола
 
-## Getting Started
+Современное веб-приложение для групповых чатов онлайн-школы с поддержкой текстовых сообщений, изображений и файлов.
 
-First, run the development server:
+## 🚀 Возможности
+
+- **Групповые чаты** - создавайте чаты для каждого класса
+- **Текстовые сообщения** - общение в реальном времени
+- **Обмен файлами** - отправка изображений и документов (до 10 МБ)
+- **Роли пользователей** - Админ, Учитель, Ученик
+- **Модерация** - удаление и редактирование сообщений, бан пользователей
+- **История сообщений** - сохранение всей переписки
+- **Push-уведомления** - мгновенные уведомления о новых сообщениях
+- **Современный дизайн** - желтый, белый, фиолетовый цвета
+
+## 🛠 Технологии
+
+- **Frontend**: Next.js 16 + React 19 + TypeScript
+- **Backend**: Next.js API Routes + Socket.io
+- **База данных**: SQLite (better-sqlite3)
+- **Стилизация**: Tailwind CSS
+- **Аутентификация**: JWT токены
+
+## 📦 Установка
+
+1. Установите зависимости:
+```bash
+npm install
+```
+
+2. Создайте файл `.env.local` (уже создан):
+```env
+JWT_SECRET=ваш-секретный-ключ
+PORT=3000
+NODE_ENV=development
+```
+
+## 🚀 Запуск
+
+### Режим разработки
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Приложение будет доступно по адресу: http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Продакшен
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## 📱 Использование
 
-To learn more about Next.js, take a look at the following resources:
+### Первый запуск
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Откройте http://localhost:3000
+2. Зарегистрируйтесь (первый пользователь автоматически становится админом)
+3. Создайте чат через кнопку "Создать чат"
+4. Добавьте участников через админ-панель
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Роли пользователей
 
-## Deploy on Vercel
+- **Админ** - полное управление системой, создание чатов, управление пользователями
+- **Учитель** - создание чатов для своих классов, модерация сообщений
+- **Ученик** - участие в чатах, отправка сообщений
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Админ-панель
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Доступна только для администраторов:
+- Управление пользователями (бан, смена ролей)
+- Просмотр всех чатов
+- Просмотр логов действий
+
+## 📁 Структура проекта
+
+```
+yochat/
+├── app/                    # Next.js страницы
+│   ├── api/               # API endpoints
+│   │   ├── auth/          # Аутентификация
+│   │   ├── chats/         # Чаты
+│   │   ├── messages/      # Сообщения
+│   │   ├── upload/        # Загрузка файлов
+│   │   └── admin/         # Админ-панель
+│   ├── chats/             # Страницы чатов
+│   ├── admin/             # Админ-панель
+│   └── login/             # Страница входа
+├── contexts/              # React контексты
+├── lib/                   # Утилиты и работа с БД
+├── data/                  # SQLite база данных
+└── public/uploads/        # Загруженные файлы
+```
+
+## 🔐 Безопасность
+
+- Пароли хэшируются с помощью bcrypt
+- JWT токены с сроком действия 7 дней
+- Проверка прав доступа для всех операций
+- Ограничение размера файлов (10 МБ)
+
+## 📝 Лицензия
+
+MIT
+
+## 👨‍💻 Разработка
+
+Создано для онлайн-школы Ёшкола (yochat.ru)
