@@ -39,6 +39,9 @@ export default function AdminPage() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
   
   const { user } = useAuth();
   const router = useRouter();
@@ -109,10 +112,6 @@ export default function AdminPage() {
       alert('Ошибка при удалении пользователя');
     }
   }
-
-  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showRemoveModal, setShowRemoveModal] = useState(false);
 
   async function addToChat(chatId: number) {
     setSelectedChatId(chatId);
