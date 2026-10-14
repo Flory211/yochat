@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 interface User {
   id: number;
@@ -33,10 +33,12 @@ export default function NewChatPage() {
 
   async function loadUsers() {
     try {
-      const response = await fetch('/api/admin?type=users');
+      const response = await fetch('/api/admin?type=users', {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
-        setUsers(data.users);
+        setUsers(data.users || []);
       }
     } catch (error) {
       console.error('Load users error:', error);
@@ -57,6 +59,7 @@ export default function NewChatPage() {
           description,
           member_ids: selectedUsers,
         }),
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -82,7 +85,6 @@ export default function NewChatPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-white to-purple-500">
-      {/* Header */}
       <header className="bg-white shadow-lg">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
@@ -98,10 +100,8 @@ export default function NewChatPage() {
         </div>
       </header>
 
-      {/* Content */}
       <main className="max-w-4xl mx-auto px-4 py-8">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Название */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Название чата *
@@ -116,7 +116,6 @@ export default function NewChatPage() {
             />
           </div>
 
-          {/* Описание */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Описание
@@ -130,7 +129,6 @@ export default function NewChatPage() {
             />
           </div>
 
-          {/* Выбор участников */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <label className="block text-sm font-medium text-gray-700 mb-4">
               Участники ({selectedUsers.length} выбрано)
@@ -172,7 +170,6 @@ export default function NewChatPage() {
             </div>
           )}
 
-          {/* Кнопки */}
           <div className="flex gap-4">
             <button
               type="button"

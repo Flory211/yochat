@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef, Suspense } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Send, Paperclip, Image, Edit2, Trash2, ArrowLeft, X } from 'lucide-react';
+import { Send, Paperclip, Edit2, Trash2, ArrowLeft } from 'lucide-react';
 
 interface Message {
   id: number;
@@ -22,12 +22,11 @@ interface Message {
   role: string;
 }
 
-function ChatContent() {
+export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
-
+  
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -40,18 +39,7 @@ function ChatContent() {
       router.push('/login');
       return;
     }
-
-    // Загружаем историю сообщений
     loadMessages();
-
-    // Обновляем сообщения каждые 2 секунды
-    const interval = setInterval(() => {
-      loadMessages();
-    }, 2000);
-
-    return () => {
-      clearInterval(interval);
-    };
   }, [user, chatId]);
 
   useEffect(() => {
@@ -60,10 +48,12 @@ function ChatContent() {
 
   async function loadMessages() {
     try {
-      const response = await fetch(`/api/messages?chatId=${chatId}`);
+      const response = await fetch(`/api/messages?chatId=${chatId}`, {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
-        setMessages(data.messages);
+        setMessages(data.messages || []);
       }
     } catch (error) {
       console.error('Load messages error:', error);
@@ -90,7 +80,6 @@ function ChatContent() {
 
       if (response.ok) {
         setNewMessage('');
-        // Обновляем сообщения сразу после отправки
         await loadMessages();
       }
     } catch (error) {
@@ -102,13 +91,11 @@ function ChatContent() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Проверяем размер
     if (file.size > 10 * 1024 * 1024) {
       alert('Размер файла не должен превышать 10 МБ');
       return;
     }
 
-    // Загружаем файл
     const formData = new FormData();
     formData.append('file', file);
 
@@ -121,8 +108,7 @@ function ChatContent() {
 
       if (response.ok) {
         const data = await response.json();
-
-        // Отправляем сообщение с файлом
+        
         const msgResponse = await fetch('/api/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -145,7 +131,6 @@ function ChatContent() {
       console.error('Upload error:', error);
     }
 
-    // Сбрасываем input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -217,7 +202,6 @@ function ChatContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-white to-purple-500 flex flex-col">
-      {/* Header */}
       <header className="bg-white shadow-lg">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
@@ -233,7 +217,6 @@ function ChatContent() {
         </div>
       </header>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
           {messages.map((message) => (
@@ -293,7 +276,6 @@ function ChatContent() {
                       {message.is_edited && <span>(изменено)</span>}
                     </div>
 
-                    {/* Кнопки редактирования/удаления */}
                     {message.user_id === user.id && !message.is_deleted && (
                       <div className="flex gap-2 mt-2">
                         <button
@@ -321,7 +303,6 @@ function ChatContent() {
         </div>
       </div>
 
-      {/* Input */}
       <div className="bg-white border-t">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <form onSubmit={sendMessage} className="flex gap-2">
@@ -361,17 +342,5 @@ function ChatContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function ChatPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-white to-purple-500 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-500"></div>
-      </div>
-    }>
-      <ChatContent />
-    </Suspense>
   );
 }

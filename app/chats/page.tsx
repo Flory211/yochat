@@ -66,7 +66,6 @@ export default function ChatsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-white to-purple-500">
-      {/* Header */}
       <header className="bg-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -77,7 +76,7 @@ export default function ChatsPage() {
               <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-purple-600 bg-clip-text text-transparent">
                 Чат
               </h1>
-              <p className="text-sm text-gray-800">Онлайн-школа Ёшкола</p>
+              <p className="text-sm text-gray-800">Онлайн-школа школа</p>
             </div>
           </div>
 
@@ -100,7 +99,6 @@ export default function ChatsPage() {
         </div>
       </header>
 
-      {/* Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-bold text-gray-800">Мои чаты</h2>
@@ -149,7 +147,6 @@ export default function ChatsPage() {
           </div>
         )}
 
-        {/* Кнопка админ-панели - только для Leo */}
         {user.username === 'Leo' && (
           <div className="mt-8">
             <button
