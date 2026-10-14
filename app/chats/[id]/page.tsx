@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { io, Socket } from 'socket.io-client';
 import { Send, Paperclip, Image, Edit2, Trash2, ArrowLeft, X } from 'lucide-react';
 
 interface Message {
@@ -28,8 +27,7 @@ function ChatContent() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
-  
+
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -43,38 +41,16 @@ function ChatContent() {
       return;
     }
 
-    // Подключаемся к Socket.io
-    const socketInstance = io('http://localhost:3000');
-    setSocket(socketInstance);
-
-    // Присоединяемся к чату
-    socketInstance.emit('join_chat', chatId);
-
-    // Слушаем новые сообщения
-    socketInstance.on('new_message', (message: Message) => {
-      setMessages((prev) => [...prev, message]);
-    });
-
-    // Слушаем редактирование
-    socketInstance.on('message_edited', (message: Message) => {
-      setMessages((prev) => prev.map((m) => (m.id === message.id ? message : m)));
-    });
-
-    // Слушаем удаление
-    socketInstance.on('message_deleted', ({ message_id }: { message_id: number }) => {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === message_id ? { ...m, is_deleted: 1, content: 'Сообщение удалено' } : m
-        )
-      );
-    });
-
     // Загружаем историю сообщений
     loadMessages();
 
+    // Обновляем сообщения каждые 2 секунды
+    const interval = setInterval(() => {
+      loadMessages();
+    }, 2000);
+
     return () => {
-      socketInstance.emit('leave_chat', chatId);
-      socketInstance.disconnect();
+      clearInterval(interval);
     };
   }, [user, chatId]);
 
@@ -98,16 +74,28 @@ function ChatContent() {
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault();
-    if (!newMessage.trim() || !socket) return;
+    if (!newMessage.trim()) return;
 
-    socket.emit('send_message', {
-      chat_id: parseInt(chatId),
-      user_id: user?.id,
-      content: newMessage.trim(),
-      message_type: 'text',
-    });
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: parseInt(chatId),
+          content: newMessage.trim(),
+          message_type: 'text',
+        }),
+        credentials: 'include',
+      });
 
-    setNewMessage('');
+      if (response.ok) {
+        setNewMessage('');
+        // Обновляем сообщения сразу после отправки
+        await loadMessages();
+      }
+    } catch (error) {
+      console.error('Send message error:', error);
+    }
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -128,21 +116,30 @@ function ChatContent() {
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Отправляем сообщение с файлом
-        socket?.emit('send_message', {
-          chat_id: parseInt(chatId),
-          user_id: user?.id,
-          content: data.file_name,
-          message_type: file.type.startsWith('image/') ? 'image' : 'file',
-          file_url: data.file_url,
-          file_name: data.file_name,
-          file_size: data.file_size,
+        const msgResponse = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: parseInt(chatId),
+            content: data.file_name,
+            message_type: file.type.startsWith('image/') ? 'image' : 'file',
+            file_url: data.file_url,
+            file_name: data.file_name,
+            file_size: data.file_size,
+          }),
+          credentials: 'include',
         });
+
+        if (msgResponse.ok) {
+          await loadMessages();
+        }
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -155,21 +152,40 @@ function ChatContent() {
   }
 
   async function handleEdit(message: Message) {
-    if (!socket) return;
-
     const newContent = prompt('Редактировать сообщение:', message.content);
-    if (newContent && newContent !== message.content) {
-      socket.emit('edit_message', {
-        message_id: message.id,
-        content: newContent,
+    if (!newContent || newContent === message.content) return;
+
+    try {
+      const response = await fetch(`/api/messages/${message.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newContent }),
+        credentials: 'include',
       });
+
+      if (response.ok) {
+        await loadMessages();
+      }
+    } catch (error) {
+      console.error('Edit message error:', error);
     }
   }
 
   async function handleDelete(messageId: number) {
     if (!confirm('Удалить сообщение?')) return;
 
-    socket?.emit('delete_message', { message_id: messageId });
+    try {
+      const response = await fetch(`/api/messages/${messageId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        await loadMessages();
+      }
+    } catch (error) {
+      console.error('Delete message error:', error);
+    }
   }
 
   function formatTime(dateString: string) {
