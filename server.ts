@@ -2,7 +2,7 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
 import { Server } from 'socket.io';
-import db from './lib/db';
+import { supabase } from './lib/db';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
@@ -27,80 +27,81 @@ app.prepare().then(() => {
   io.on('connection', (socket) => {
     console.log('Пользователь подключен:', socket.id);
 
-    // Присоединение к чату
     socket.on('join_chat', (chatId) => {
       socket.join(`chat_${chatId}`);
       console.log(`Пользователь ${socket.id} присоединился к чату ${chatId}`);
     });
 
-    // Покинуть чат
     socket.on('leave_chat', (chatId) => {
       socket.leave(`chat_${chatId}`);
       console.log(`Пользователь ${socket.id} покинул чат ${chatId}`);
     });
 
-    // Новое сообщение
-    socket.on('send_message', (data) => {
+    socket.on('send_message', async (data) => {
       const { chat_id, user_id, content, message_type = 'text', file_url, file_name, file_size } = data;
 
-      // Сохраняем сообщение в БД
-      const result = db.prepare(`
-        INSERT INTO messages (chat_id, user_id, content, message_type, file_url, file_name, file_size)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(chat_id, user_id, content, message_type, file_url || null, file_name || null, file_size || null);
+      const { data: message, error } = await supabase
+        .from('messages')
+        .insert([{ chat_id, user_id, content, message_type, file_url, file_name, file_size }])
+        .select('*, users!inner(username, display_name, role)')
+        .single();
 
-      const messageId = result.lastInsertRowid as number;
+      if (error) {
+        console.error('Send message error:', error);
+        return;
+      }
 
-      // Получаем данные сообщения
-      const message = db.prepare(`
-        SELECT m.*, u.username, u.display_name, u.role
-        FROM messages m
-        JOIN users u ON m.user_id = u.id
-        WHERE m.id = ?
-      `).get(messageId) as any;
-
-      // Отправляем сообщение всем в чате
       io.to(`chat_${chat_id}`).emit('new_message', message);
     });
 
-    // Редактирование сообщения
-    socket.on('edit_message', (data) => {
+    socket.on('edit_message', async (data) => {
       const { message_id, content } = data;
 
-      db.prepare(`
-        UPDATE messages SET content = ?, is_edited = 1 WHERE id = ?
-      `).run(content, message_id);
+      const { error } = await supabase
+        .from('messages')
+        .update({ content, is_edited: true })
+        .eq('id', message_id);
 
-      const message = db.prepare(`
-        SELECT m.*, u.username, u.display_name, u.role
-        FROM messages m
-        JOIN users u ON m.user_id = u.id
-        WHERE m.id = ?
-      `).get(message_id) as any;
+      if (error) {
+        console.error('Edit message error:', error);
+        return;
+      }
 
-      // Отправляем обновленное сообщение
-      const chatId = message.chat_id;
-      io.to(`chat_${chatId}`).emit('message_edited', message);
+      const { data: message } = await supabase
+        .from('messages')
+        .select('*, users!inner(username, display_name, role)')
+        .eq('id', message_id)
+        .single();
+
+      if (message) {
+        io.to(`chat_${message.chat_id}`).emit('message_edited', message);
+      }
     });
 
-    // Удаление сообщения
-    socket.on('delete_message', (data) => {
+    socket.on('delete_message', async (data) => {
       const { message_id } = data;
 
-      const message = db.prepare(`
-        SELECT chat_id FROM messages WHERE id = ?
-      `).get(message_id) as any;
+      const { data: message } = await supabase
+        .from('messages')
+        .select('chat_id')
+        .eq('id', message_id)
+        .single();
 
-      db.prepare(`
-        UPDATE messages SET is_deleted = 1, content = 'Сообщение удалено' WHERE id = ?
-      `).run(message_id);
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_deleted: true, content: 'Сообщение удалено' })
+        .eq('id', message_id);
+
+      if (error) {
+        console.error('Delete message error:', error);
+        return;
+      }
 
       if (message) {
         io.to(`chat_${message.chat_id}`).emit('message_deleted', { message_id });
       }
     });
 
-    // Отключение
     socket.on('disconnect', () => {
       console.log('Пользователь отключен:', socket.id);
     });
