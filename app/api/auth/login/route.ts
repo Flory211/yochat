@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { supabase } from '@/lib/db';
 import { verifyPassword, createToken, getCookieOptions, COOKIE_NAME } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -14,13 +14,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ищем пользователя
-    const user = db.prepare(`
-      SELECT id, username, display_name, password_hash, role, is_banned
-      FROM users WHERE username = ?
-    `).get(username) as any;
+    // Ищем пользователя в Supabase
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, username, display_name, password_hash, role, is_banned')
+      .eq('username', username)
+      .single();
 
-    if (!user) {
+    if (error || !user) {
       return NextResponse.json(
         { error: 'Неверное имя пользователя или пароль' },
         { status: 401 }
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // Проверяем пароль
     const isValidPassword = await verifyPassword(password, user.password_hash);
-    
+
     if (!isValidPassword) {
       return NextResponse.json(
         { error: 'Неверное имя пользователя или пароль' },
@@ -51,14 +52,13 @@ export async function POST(request: NextRequest) {
       username: user.username,
       display_name: user.display_name,
       role: user.role,
-      is_banned: user.is_banned,
+      is_banned: user.is_banned ? 1 : 0,
     });
 
     // Логируем действие
-    db.prepare(`
-      INSERT INTO logs (user_id, action, details)
-      VALUES (?, ?, ?)
-    `).run(user.id, 'login', `Вход в систему`);
+    await supabase
+      .from('logs')
+      .insert([{ user_id: user.id, action: 'login', details: 'Вход в систему' }]);
 
     // Устанавливаем cookie
     const response = NextResponse.json({
