@@ -46,7 +46,17 @@ export async function POST(request: NextRequest) {
 
     await supabase.from('logs').insert([{ user_id: user.id, action: 'register', details: `Новый пользователь: ${username}` }]);
 
-    const response = NextResponse.json({ user: { id: user.id, username: user.username, display_name: user.display_name, role: user.role } });
+    // Устанавливаем cookie
+    const response = NextResponse.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        display_name: user.display_name,
+        role: user.role,
+      },
+      token: token, // Возвращаем токен для localStorage
+    });
+
     response.cookies.set(COOKIE_NAME, token, getCookieOptions());
 
     return response;

@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
         username: user.username,
         display_name: user.display_name,
         role: user.role,
-      }
+      },
+      token: token, // Возвращаем токен для localStorage
     });
 
     response.cookies.set(COOKIE_NAME, token, getCookieOptions());
