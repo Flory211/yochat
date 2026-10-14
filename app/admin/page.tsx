@@ -39,9 +39,6 @@ export default function AdminPage() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showRemoveModal, setShowRemoveModal] = useState(false);
   
   const { user } = useAuth();
   const router = useRouter();
@@ -114,17 +111,8 @@ export default function AdminPage() {
   }
 
   async function addToChat(chatId: number) {
-    setSelectedChatId(chatId);
-    setShowAddModal(true);
-  }
-
-  async function removeFromChat(chatId: number) {
-    setSelectedChatId(chatId);
-    setShowRemoveModal(true);
-  }
-
-  async function addUserToChat(userId: number) {
-    if (!selectedChatId) return;
+    const userId = prompt('Введите ID пользователя для добавления в чат:');
+    if (!userId) return;
 
     try {
       const response = await fetch('/api/admin', {
@@ -132,14 +120,13 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'add_to_chat',
-          chat_id: selectedChatId,
-          user_id: userId,
+          chat_id: chatId,
+          user_id: parseInt(userId),
         }),
       });
 
       if (response.ok) {
         alert('Пользователь добавлен в чат!');
-        setShowAddModal(false);
         loadData();
       } else {
         const data = await response.json();
@@ -151,8 +138,9 @@ export default function AdminPage() {
     }
   }
 
-  async function removeUserFromChat(userId: number) {
-    if (!selectedChatId) return;
+  async function removeFromChat(chatId: number) {
+    const userId = prompt('Введите ID пользователя для удаления из чата:');
+    if (!userId) return;
 
     try {
       const response = await fetch('/api/admin', {
@@ -160,14 +148,13 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'remove_from_chat',
-          chat_id: selectedChatId,
-          user_id: userId,
+          chat_id: chatId,
+          user_id: parseInt(userId),
         }),
       });
 
       if (response.ok) {
         alert('Пользователь удалён из чата!');
-        setShowRemoveModal(false);
         loadData();
       } else {
         const data = await response.json();
@@ -393,80 +380,6 @@ export default function AdminPage() {
           </>
         )}
       </main>
-
-      {/* Модальное окно добавления участников */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Добавить участников в чат</h2>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {users.map((u) => (
-                  <div
-                    key={u.id}
-                    onClick={() => addUserToChat(u.id)}
-                    className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-purple-50 transition border-2 border-transparent hover:border-purple-500"
-                  >
-                    <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
-                      {u.display_name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">{u.display_name}</p>
-                      <p className="text-sm text-gray-600">@{u.username}</p>
-                    </div>
-                    <span className="text-sm text-gray-600">
-                      {u.role === 'admin' ? 'Админ' : u.role === 'teacher' ? 'Учитель' : 'Ученик'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="w-full mt-4 bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition"
-              >
-                Отмена
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Модальное окно удаления участников */}
-      {showRemoveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Удалить участников из чата</h2>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {users.map((u) => (
-                  <div
-                    key={u.id}
-                    onClick={() => removeUserFromChat(u.id)}
-                    className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-red-50 transition border-2 border-transparent hover:border-red-500"
-                  >
-                    <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
-                      {u.display_name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">{u.display_name}</p>
-                      <p className="text-sm text-gray-600">@{u.username}</p>
-                    </div>
-                    <span className="text-sm text-gray-600">
-                      {u.role === 'admin' ? 'Админ' : u.role === 'teacher' ? 'Учитель' : 'Ученик'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => setShowRemoveModal(false)}
-                className="w-full mt-4 bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition"
-              >
-                Отмена
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
