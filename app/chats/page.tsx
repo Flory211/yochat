@@ -36,7 +36,6 @@ export default function ChatsPage() {
         const data = await response.json();
         setChats(data.chats || []);
       } else {
-        // Если не авторизован - показываем пустой список
         setChats([]);
       }
     } catch (error) {
@@ -76,7 +75,7 @@ export default function ChatsPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-purple-600 bg-clip-text text-transparent">
-                ЁЧат
+                Чат
               </h1>
               <p className="text-sm text-gray-800">Онлайн-школа Ёшкола</p>
             </div>
