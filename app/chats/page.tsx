@@ -29,13 +29,19 @@ export default function ChatsPage() {
 
   async function loadChats() {
     try {
-      const response = await fetch('/api/chats');
+      const response = await fetch('/api/chats', {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
-        setChats(data.chats);
+        setChats(data.chats || []);
+      } else {
+        // Если не авторизован - показываем пустой список
+        setChats([]);
       }
     } catch (error) {
       console.error('Load chats error:', error);
+      setChats([]);
     } finally {
       setLoading(false);
     }
