@@ -47,7 +47,7 @@ git push -u origin main
 
 1. В проекте Railway нажмите **"Variables"**
 2. Добавьте переменную:
-   - `JWT_SECRET` = `yochat-secret-key-change-in-production-12345`
+   - `JWT_SECRET` = (ваш секретный ключ)
    - `NODE_ENV` = `production`
    - `PORT` = `3000`
 
