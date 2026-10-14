@@ -1,7 +1,9 @@
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
+import { cookies } from 'next/headers';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'yochat-secret-key-change-in-production');
+const COOKIE_NAME = 'yochat_token';
 const TOKEN_KEY = 'yochat_token';
 
 export interface User {
@@ -41,4 +43,24 @@ export async function verifyToken(token: string): Promise<User | null> {
   }
 }
 
-export { TOKEN_KEY };
+export async function getCurrentUser(): Promise<User | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+
+  if (!token) return null;
+
+  const user = await verifyToken(token);
+  return user;
+}
+
+export function getCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax' as const,
+    maxAge: 60 * 60 * 24 * 7,
+    path: '/',
+  };
+}
+
+export { COOKIE_NAME, TOKEN_KEY };
