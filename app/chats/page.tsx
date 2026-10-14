@@ -112,7 +112,7 @@ export default function ChatsPage() {
 
         {chats.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-            <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <MessageCircle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Пока нет чатов</h3>
             <p className="text-gray-800">
               {user.role === 'admin' || user.role === 'teacher'
