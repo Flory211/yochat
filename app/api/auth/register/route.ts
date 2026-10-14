@@ -1,100 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { supabase } from '@/lib/db';
 import { hashPassword, createToken, getCookieOptions, COOKIE_NAME } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
     const { username, display_name, password } = await request.json();
 
-    // Валидация
     if (!username || !display_name || !password) {
-      return NextResponse.json(
-        { error: 'Все поля обязательны' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Все поля обязательны' }, { status: 400 });
     }
 
     if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'Пароль должен быть не менее 6 символов' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Пароль должен быть не менее 6 символов' }, { status: 400 });
     }
 
-    // Проверяем, существует ли пользователь
-    const existingUser = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+    const { data: existingUser } = await supabase.from('users').select('id').eq('username', username).single();
     
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'Пользователь с таким именем уже существует' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Пользователь с таким именем уже существует' }, { status: 400 });
     }
 
-    // Хэшируем пароль
     const passwordHash = await hashPassword(password);
 
-    // Определяем роль (первый пользователь - админ)
-    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-    const role = userCount.count === 0 ? 'admin' : 'student';
+    const { count } = await supabase.from('users').select('*', { count: 'exact', head: true });
+    const role = count === 0 ? 'admin' : 'student';
 
-    // Создаем пользователя
-    const result = db.prepare(`
-      INSERT INTO users (username, display_name, password_hash, role)
-      VALUES (?, ?, ?, ?)
-    `).run(username, display_name, passwordHash, role);
+    const { data: user, error } = await supabase
+      .from('users')
+      .insert([{ username, display_name, password_hash: passwordHash, role }])
+      .select('id, username, display_name, role')
+      .single();
 
-    const userId = result.lastInsertRowid as number;
-
-    // Получаем данные пользователя
-    const user = db.prepare(`
-      SELECT id, username, display_name, role, is_banned
-      FROM users WHERE id = ?
-    `).get(userId) as any;
-
-    // Создаем токен
-    const token = await createToken(user);
-
-    // Если это первый пользователь, создаем общий чат
-    if (userCount.count === 0) {
-      const chatResult = db.prepare(`
-        INSERT INTO chats (name, description, created_by)
-        VALUES (?, ?, ?)
-      `).run('Общий чат', 'Общий чат для всех пользователей', userId);
-
-      const chatId = chatResult.lastInsertRowid as number;
-
-      // Добавляем админа в общий чат
-      db.prepare(`
-        INSERT INTO chat_members (chat_id, user_id)
-        VALUES (?, ?)
-      `).run(chatId, userId);
+    if (error) {
+      return NextResponse.json({ error: 'Ошибка при создании пользователя' }, { status: 500 });
     }
 
-    // Логируем действие
-    db.prepare(`
-      INSERT INTO logs (user_id, action, details)
-      VALUES (?, ?, ?)
-    `).run(userId, 'register', `Новый пользователь: ${username}`);
+    const token = await createToken({ id: user.id, username: user.username, display_name: user.display_name, role: user.role, is_banned: 0 });
 
-    // Устанавливаем cookie
-    const response = NextResponse.json({
-      user: {
-        id: user.id,
-        username: user.username,
-        display_name: user.display_name,
-        role: user.role,
+    if (count === 0) {
+      const { data: chat } = await supabase.from('chats').insert([{ name: 'Общий чат', description: 'Общий чат для всех пользователей', created_by: user.id }]).select('id').single();
+      if (chat) {
+        await supabase.from('chat_members').insert([{ chat_id: chat.id, user_id: user.id }]);
       }
-    });
+    }
 
+    await supabase.from('logs').insert([{ user_id: user.id, action: 'register', details: `Новый пользователь: ${username}` }]);
+
+    const response = NextResponse.json({ user: { id: user.id, username: user.username, display_name: user.display_name, role: user.role } });
     response.cookies.set(COOKIE_NAME, token, getCookieOptions());
 
     return response;
   } catch (error) {
     console.error('Register error:', error);
-    return NextResponse.json(
-      { error: 'Ошибка сервера' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
   }
 }
