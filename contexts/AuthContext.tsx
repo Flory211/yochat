@@ -20,6 +20,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const USER_KEY = 'yochat_user';
+const TOKEN_KEY = 'yochat_token';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -28,11 +29,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Восстанавливаем сессию из localStorage при загрузке
     const savedUser = localStorage.getItem(USER_KEY);
-    if (savedUser) {
+    const savedToken = localStorage.getItem(TOKEN_KEY);
+    
+    if (savedUser && savedToken) {
       try {
         setUser(JSON.parse(savedUser));
       } catch (e) {
         localStorage.removeItem(USER_KEY);
+        localStorage.removeItem(TOKEN_KEY);
       }
     }
     setLoading(false);
@@ -53,6 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Сохраняем в localStorage
     localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    if (data.token) {
+      localStorage.setItem(TOKEN_KEY, data.token);
+    }
     setUser(data.user);
   }
 
@@ -71,12 +78,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Сохраняем в localStorage
     localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    if (data.token) {
+      localStorage.setItem(TOKEN_KEY, data.token);
+    }
     setUser(data.user);
   }
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
   }
 
