@@ -110,6 +110,63 @@ export default function AdminPage() {
     }
   }
 
+  async function addToChat(chatId: number) {
+    // Показываем список пользователей для добавления
+    const userId = prompt('Введите ID пользователя для добавления в чат:');
+    if (!userId) return;
+
+    try {
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add_to_chat',
+          chat_id: chatId,
+          user_id: parseInt(userId),
+        }),
+      });
+
+      if (response.ok) {
+        alert('Пользователь добавлен в чат!');
+        loadData();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Ошибка при добавлении пользователя');
+      }
+    } catch (error) {
+      console.error('Add to chat error:', error);
+      alert('Ошибка при добавлении пользователя');
+    }
+  }
+
+  async function removeFromChat(chatId: number) {
+    const userId = prompt('Введите ID пользователя для удаления из чата:');
+    if (!userId) return;
+
+    try {
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'remove_from_chat',
+          chat_id: chatId,
+          user_id: parseInt(userId),
+        }),
+      });
+
+      if (response.ok) {
+        alert('Пользователь удалён из чата!');
+        loadData();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Ошибка при удалении пользователя из чата');
+      }
+    } catch (error) {
+      console.error('Remove from chat error:', error);
+      alert('Ошибка при удалении пользователя из чата');
+    }
+  }
+
   if (!user || user.username !== 'Leo') return null;
 
   return (
@@ -267,7 +324,21 @@ export default function AdminPage() {
                     </div>
                     <h3 className="text-xl font-bold text-gray-800 mb-2">{chat.name}</h3>
                     <p className="text-gray-800 text-sm mb-4">{chat.description || 'Без описания'}</p>
-                    <p className="text-xs text-gray-700">Создан: {new Date(chat.created_at).toLocaleDateString('ru-RU')}</p>
+                    <p className="text-xs text-gray-700 mb-4">Создан: {new Date(chat.created_at).toLocaleDateString('ru-RU')}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => addToChat(chat.id)}
+                        className="flex-1 bg-purple-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-purple-600 transition"
+                      >
+                        Добавить участников
+                      </button>
+                      <button
+                        onClick={() => removeFromChat(chat.id)}
+                        className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition"
+                      >
+                        Удалить участников
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
