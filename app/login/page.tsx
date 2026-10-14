@@ -64,6 +64,7 @@ export default function LoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 placeholder="Введите никнейм"
+                autoComplete="username"
                 required
               />
             </div>
@@ -82,6 +83,7 @@ export default function LoginPage() {
                   onChange={(e) => setDisplayName(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                   placeholder="Введите ваше имя"
+                  autoComplete="name"
                   required
                 />
               </div>
@@ -100,6 +102,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 placeholder="Введите пароль"
+                autoComplete={isLogin ? "current-password" : "new-password"}
                 required
               />
               <button
