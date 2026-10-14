@@ -55,7 +55,7 @@ export async function getCurrentUser(): Promise<User | null> {
 export function getCookieOptions() {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: true, // Всегда true для HTTPS (Netlify использует HTTPS)
     sameSite: 'lax' as const,
     maxAge: 60 * 60 * 24 * 7, // 7 дней
     path: '/',
