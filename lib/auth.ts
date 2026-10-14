@@ -1,9 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'yochat-secret-key-change-in-production');
-const COOKIE_NAME = 'yochat_token';
+const TOKEN_KEY = 'yochat_token';
 
 export interface User {
   id: number;
@@ -22,11 +21,11 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export async function createToken(user: User): Promise<string> {
-  return new SignJWT({ 
-    id: user.id, 
-    username: user.username, 
+  return new SignJWT({
+    id: user.id,
+    username: user.username,
     display_name: user.display_name,
-    role: user.role 
+    role: user.role
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d')
@@ -42,24 +41,4 @@ export async function verifyToken(token: string): Promise<User | null> {
   }
 }
 
-export async function getCurrentUser(): Promise<User | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  
-  if (!token) return null;
-  
-  const user = await verifyToken(token);
-  return user;
-}
-
-export function getCookieOptions() {
-  return {
-    httpOnly: true,
-    secure: true, // Всегда true для HTTPS (Netlify использует HTTPS)
-    sameSite: 'lax' as const,
-    maxAge: 60 * 60 * 24 * 7, // 7 дней
-    path: '/',
-  };
-}
-
-export { COOKIE_NAME };
+export { TOKEN_KEY };

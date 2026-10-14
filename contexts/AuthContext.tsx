@@ -19,37 +19,30 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const USER_KEY = 'yochat_user';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Проверяем авторизацию при загрузке
-    checkAuth();
-  }, []);
-
-  async function checkAuth() {
-    try {
-      const response = await fetch('/api/auth/me', {
-        credentials: 'include', // Важно! Включаем cookies
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
+    // Восстанавливаем сессию из localStorage при загрузке
+    const savedUser = localStorage.getItem(USER_KEY);
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem(USER_KEY);
       }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-    } finally {
-      setLoading(false);
     }
-  }
+    setLoading(false);
+  }, []);
 
   async function login(username: string, password: string) {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
-      credentials: 'include', // Важно! Включаем cookies
     });
 
     const data = await response.json();
@@ -58,6 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(data.error);
     }
 
+    // Сохраняем в localStorage
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
     setUser(data.user);
   }
 
@@ -66,7 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, display_name, password }),
-      credentials: 'include', // Важно! Включаем cookies
     });
 
     const data = await response.json();
@@ -75,14 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(data.error);
     }
 
+    // Сохраняем в localStorage
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
     setUser(data.user);
   }
 
   async function logout() {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include', // Важно! Включаем cookies
-    });
+    await fetch('/api/auth/logout', { method: 'POST' });
+    localStorage.removeItem(USER_KEY);
     setUser(null);
   }
 
