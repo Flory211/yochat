@@ -35,9 +35,12 @@ export default function LoginPage() {
         throw new Error(data.error || 'Ошибка');
       }
 
-      // Сохраняем пользователя в localStorage
+      // Сохраняем пользователя и токен в localStorage
       localStorage.setItem('user', JSON.stringify(data.user));
-      
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+
       router.push('/chats');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Произошла ошибка');

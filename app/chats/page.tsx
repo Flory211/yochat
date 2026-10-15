@@ -37,9 +37,14 @@ export default function ChatsPage() {
 
   async function loadData() {
     try {
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Authorization': `Bearer ${token || ''}`,
+      };
+
       const [chatsRes, usersRes] = await Promise.all([
-        fetch('/api/chats'),
-        fetch('/api/users')
+        fetch('/api/chats', { headers }),
+        fetch('/api/users', { headers })
       ]);
 
       if (chatsRes.ok) {
@@ -60,9 +65,13 @@ export default function ChatsPage() {
 
   async function startPrivateChat(userId: number) {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch('/api/chats', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || ''}`,
+        },
         body: JSON.stringify({
           type: 'private',
           member_ids: [userId]
