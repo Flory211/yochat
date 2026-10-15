@@ -41,14 +41,22 @@ export async function POST(request: NextRequest) {
       is_banned: user.is_banned,
     });
 
-    if (userCount.count === 0) {
+    // Создаём общий чат, если его ещё нет
+    const generalChat = db.prepare("SELECT id FROM chats WHERE type = 'general'").get() as any;
+    
+    if (!generalChat) {
       const chatResult = db.prepare(
-        'INSERT INTO chats (name, description, created_by) VALUES (?, ?, ?)'
-      ).run('Общий чат', 'Общий чат для всех пользователей', userId);
+        "INSERT INTO chats (name, description, type, created_by) VALUES (?, ?, ?, ?)"
+      ).run('Общий чат', 'Общий чат для всех пользователей', 'general', userId);
 
       const chatId = chatResult.lastInsertRowid as number;
-
       db.prepare('INSERT INTO chat_members (chat_id, user_id) VALUES (?, ?)').run(chatId, userId);
+    } else {
+      // Добавляем пользователя в общий чат, если он ещё не там
+      const isMember = db.prepare('SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?').get(generalChat.id, userId);
+      if (!isMember) {
+        db.prepare('INSERT INTO chat_members (chat_id, user_id) VALUES (?, ?)').run(generalChat.id, userId);
+      }
     }
 
     db.prepare('INSERT INTO logs (user_id, action, details) VALUES (?, ?, ?)').run(userId, 'register', `Новый пользователь: ${username}`);
