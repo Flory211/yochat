@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/db';
-import { hashPassword, createToken, getCookieOptions, COOKIE_NAME } from '@/lib/auth';
+import db from '@/lib/db';
+import { hashPassword, createToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,39 +14,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Пароль должен быть не менее 6 символов' }, { status: 400 });
     }
 
-    const { data: existingUser } = await supabase.from('users').select('id').eq('username', username).single();
-    
+    const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+
     if (existingUser) {
       return NextResponse.json({ error: 'Пользователь с таким именем уже существует' }, { status: 400 });
     }
 
     const passwordHash = await hashPassword(password);
 
-    const { count } = await supabase.from('users').select('*', { count: 'exact', head: true });
-    const role = count === 0 ? 'admin' : 'student';
+    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
+    const role = userCount.count === 0 ? 'admin' : 'student';
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .insert([{ username, display_name, password_hash: passwordHash, role }])
-      .select('id, username, display_name, role')
-      .single();
+    const result = db.prepare(
+      'INSERT INTO users (username, display_name, password_hash, role) VALUES (?, ?, ?, ?)'
+    ).run(username, display_name, passwordHash, role);
 
-    if (error) {
-      return NextResponse.json({ error: 'Ошибка при создании пользователя' }, { status: 500 });
+    const userId = result.lastInsertRowid as number;
+
+    const user = db.prepare('SELECT id, username, display_name, role, is_banned FROM users WHERE id = ?').get(userId) as any;
+
+    const token = await createToken({
+      id: user.id,
+      username: user.username,
+      display_name: user.display_name,
+      role: user.role,
+      is_banned: user.is_banned,
+    });
+
+    if (userCount.count === 0) {
+      const chatResult = db.prepare(
+        'INSERT INTO chats (name, description, created_by) VALUES (?, ?, ?)'
+      ).run('Общий чат', 'Общий чат для всех пользователей', userId);
+
+      const chatId = chatResult.lastInsertRowid as number;
+
+      db.prepare('INSERT INTO chat_members (chat_id, user_id) VALUES (?, ?)').run(chatId, userId);
     }
 
-    const token = await createToken({ id: user.id, username: user.username, display_name: user.display_name, role: user.role, is_banned: 0 });
+    db.prepare('INSERT INTO logs (user_id, action, details) VALUES (?, ?, ?)').run(userId, 'register', `Новый пользователь: ${username}`);
 
-    if (count === 0) {
-      const { data: chat } = await supabase.from('chats').insert([{ name: 'Общий чат', description: 'Общий чат для всех пользователей', created_by: user.id }]).select('id').single();
-      if (chat) {
-        await supabase.from('chat_members').insert([{ chat_id: chat.id, user_id: user.id }]);
-      }
-    }
-
-    await supabase.from('logs').insert([{ user_id: user.id, action: 'register', details: `Новый пользователь: ${username}` }]);
-
-    // Устанавливаем cookie
     const response = NextResponse.json({
       user: {
         id: user.id,
@@ -54,10 +60,16 @@ export async function POST(request: NextRequest) {
         display_name: user.display_name,
         role: user.role,
       },
-      token: token, // Возвращаем токен для localStorage
+      token,
     });
 
-    response.cookies.set(COOKIE_NAME, token, getCookieOptions());
+    response.cookies.set('yochat_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
 
     return response;
   } catch (error) {
