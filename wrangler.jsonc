@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "yochat",
+  "compatibility_date": "2026-10-15",
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "yochat-db",
+      "database_id": "60d3018e-0f94-4b6c-a35f-b92a9eae8bc8"
+    }
+  ]
+}

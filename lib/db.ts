@@ -2,21 +2,39 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const dbPath = path.join(process.cwd(), 'data', 'yochat.db');
+// Cloudflare D1 types
+export interface D1Database {
+  prepare(query: string): D1PreparedStatement;
+}
 
-// Создаем папку data если её нет
+export interface D1PreparedStatement {
+  bind(...values: any[]): D1PreparedStatement;
+  first<T = any>(): Promise<T | undefined>;
+  all<T = any>(): Promise<{ results: T[] }>;
+  run(): Promise<D1Result>;
+}
+
+export interface D1Result {
+  success: boolean;
+  meta: {
+    changes: number;
+    last_row_id: number;
+  };
+}
+
+// Local SQLite database (for development)
+const dbPath = path.join(process.cwd(), 'data', 'yochat.db');
 const dataDir = path.dirname(dbPath);
+
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-const db = new Database(dbPath);
+const localDb = new Database(dbPath);
+localDb.pragma('journal_mode = WAL');
 
-// Включаем WAL режим для лучшей производительности
-db.pragma('journal_mode = WAL');
-
-// Инициализация базы данных
-db.exec(`
+// Initialize local database schema
+localDb.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
@@ -31,6 +49,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
+    type TEXT DEFAULT 'general' CHECK(type IN ('general', 'private')),
     created_by INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES users(id)
@@ -71,4 +90,45 @@ db.exec(`
   );
 `);
 
-export default db;
+// Unified database interface
+export function getDb(env?: { DB?: D1Database }) {
+  if (env?.DB) {
+    // Cloudflare D1
+    return {
+      prepare: (sql: string) => {
+        const stmt = env.DB!.prepare(sql);
+        return {
+          get: async (...params: any[]) => {
+            const result = await stmt.bind(...params).first();
+            return result || null;
+          },
+          run: async (...params: any[]) => {
+            const result = await stmt.bind(...params).run();
+            return { lastInsertRowid: result.meta.last_row_id };
+          },
+          all: async (...params: any[]) => {
+            const result = await stmt.bind(...params).all();
+            return result.results || [];
+          }
+        };
+      }
+    };
+  } else {
+    // Local SQLite
+    return {
+      prepare: (sql: string) => {
+        const stmt = localDb.prepare(sql);
+        return {
+          get: (...params: any[]) => stmt.get(...params) || null,
+          run: (...params: any[]) => {
+            const result = stmt.run(...params);
+            return { lastInsertRowid: result.lastInsertRowid };
+          },
+          all: (...params: any[]) => stmt.all(...params) || []
+        };
+      }
+    };
+  }
+}
+
+export default localDb;
