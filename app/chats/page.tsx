@@ -148,6 +148,36 @@ export default function ChatsPage() {
             ))}
           </div>
         )}
+
+        {user.username === 'Leo' && (
+          <div style={{ marginTop: '24px' }}>
+            <button
+              onClick={() => router.push('/admin')}
+              style={{
+                width: '100%',
+                padding: '16px',
+                background: 'white',
+                border: '2px solid #9b59b6',
+                color: '#9b59b6',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#9b59b6';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#9b59b6';
+              }}
+            >
+              Панель администратора
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );
