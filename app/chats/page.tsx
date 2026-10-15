@@ -11,8 +11,16 @@ interface Chat {
   last_message?: string;
 }
 
+interface User {
+  id: number;
+  username: string;
+  display_name: string;
+  role: string;
+}
+
 export default function ChatsPage() {
   const [chats, setChats] = useState<Chat[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
@@ -21,23 +29,52 @@ export default function ChatsPage() {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
-      loadChats();
+      loadData();
     } else {
       router.push('/login');
     }
   }, []);
 
-  async function loadChats() {
+  async function loadData() {
     try {
-      const response = await fetch('/api/chats');
-      if (response.ok) {
-        const data = await response.json();
-        setChats(data.chats || []);
+      const [chatsRes, usersRes] = await Promise.all([
+        fetch('/api/chats'),
+        fetch('/api/users')
+      ]);
+
+      if (chatsRes.ok) {
+        const chatsData = await chatsRes.json();
+        setChats(chatsData.chats || []);
+      }
+
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setUsers(usersData.users || []);
       }
     } catch (error) {
-      console.error('Load chats error:', error);
+      console.error('Load data error:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function startPrivateChat(userId: number) {
+    try {
+      const response = await fetch('/api/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'private',
+          member_ids: [userId]
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        router.push(`/chats/${data.chat_id}`);
+      }
+    } catch (error) {
+      console.error('Start chat error:', error);
     }
   }
 
@@ -105,7 +142,7 @@ export default function ChatsPage() {
             Пока нет чатов
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
             {chats.map((chat) => (
               <div
                 key={chat.id}
@@ -148,6 +185,43 @@ export default function ChatsPage() {
             ))}
           </div>
         )}
+
+        <h2 style={{ fontSize: '18px', marginBottom: '16px' }}>Пользователи</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {users.filter(u => u.id !== user.id).map((u) => (
+            <div
+              key={u.id}
+              style={{
+                background: 'white',
+                padding: '16px',
+                borderRadius: '8px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{u.display_name}</div>
+                <div style={{ fontSize: '14px', color: '#666' }}>@{u.username}</div>
+              </div>
+              <button
+                onClick={() => startPrivateChat(u.id)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#4a90e2',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Написать
+              </button>
+            </div>
+          ))}
+        </div>
 
         {user.username === 'Leo' && (
           <div style={{ marginTop: '24px' }}>

@@ -37,6 +37,36 @@ export async function POST(request: NextRequest) {
 
     const { name, description, type, member_ids } = await request.json();
 
+    // Если это личный чат, проверяем существует ли он уже
+    if (type === 'private' && member_ids && member_ids.length === 1) {
+      const otherUserId = member_ids[0];
+      
+      const existingChat = db.prepare(`
+        SELECT c.id FROM chats c
+        JOIN chat_members cm1 ON c.id = cm1.chat_id
+        JOIN chat_members cm2 ON c.id = cm2.chat_id
+        WHERE c.type = 'private'
+        AND cm1.user_id = ?
+        AND cm2.user_id = ?
+      `).get(user.id, otherUserId) as any;
+
+      if (existingChat) {
+        return NextResponse.json({ success: true, chat_id: existingChat.id, exists: true });
+      }
+
+      const result = db.prepare(
+        'INSERT INTO chats (name, description, type, created_by) VALUES (?, ?, ?, ?)'
+      ).run(`Личный чат`, '', 'private', user.id);
+
+      const chatId = result.lastInsertRowid as number;
+
+      db.prepare('INSERT INTO chat_members (chat_id, user_id) VALUES (?, ?)').run(chatId, user.id);
+      db.prepare('INSERT INTO chat_members (chat_id, user_id) VALUES (?, ?)').run(chatId, otherUserId);
+
+      return NextResponse.json({ success: true, chat_id: chatId });
+    }
+
+    // Создание общего чата
     if (!name) {
       return NextResponse.json({ error: 'Название чата обязательно' }, { status: 400 });
     }
