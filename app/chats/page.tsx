@@ -31,6 +31,9 @@ export default function ChatsPage() {
     try {
       const response = await fetch('/api/chats', {
         credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('yochat_token') || ''}`,
+        },
       });
       if (response.ok) {
         const data = await response.json();
