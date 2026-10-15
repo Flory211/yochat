@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/auth';
 export async function GET() {
   try {
     const user = await getCurrentUser();
-
+    
     if (!user) {
       return NextResponse.json(
         { error: 'Не авторизирован' },
@@ -21,3 +21,5 @@ export async function GET() {
     );
   }
 }
+
+export const dynamic = 'force-dynamic';
