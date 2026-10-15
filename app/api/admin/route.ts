@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     if (user.username !== 'Leo') return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 });
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     if (user.username !== 'Leo') return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 });
 

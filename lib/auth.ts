@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { NextRequest } from 'next/server';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'yochat-secret-key-change-in-production');
 const COOKIE_NAME = 'yochat_token';
@@ -43,9 +44,22 @@ export async function verifyToken(token: string): Promise<User | null> {
   }
 }
 
-export async function getCurrentUser(): Promise<User | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
+export async function getCurrentUser(request?: NextRequest): Promise<User | null> {
+  let token: string | undefined;
+
+  // Сначала пробуем получить токен из заголовка Authorization
+  if (request) {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+  }
+
+  // Если нет в заголовке, пробуем cookies
+  if (!token) {
+    const cookieStore = await cookies();
+    token = cookieStore.get(COOKIE_NAME)?.value;
+  }
 
   if (!token) return null;
 
