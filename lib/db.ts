@@ -100,9 +100,12 @@ if (!isCloudflare) {
 
 // Unified database interface
 export function getDb(env?: { DB?: D1Database }) {
-  // Try to get D1 binding from Cloudflare environment
-  const d1Db = env?.DB || (globalThis as any).__WORKER_ENV__?.DB;
-  
+  // Try to get D1 binding from various sources
+  const d1Db = env?.DB || 
+               (globalThis as any).__WORKER_ENV__?.DB ||
+               (globalThis as any).DB ||
+               (typeof process !== 'undefined' ? (process.env as any).DB : undefined);
+
   if (d1Db) {
     // Cloudflare D1
     return {
