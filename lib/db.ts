@@ -102,41 +102,8 @@ if (!isProduction) {
 }
 
 // Unified database interface
-export async function getDb() {
-  let d1Db: D1Database | null = null;
-
-  // In production, get D1 binding from Cloudflare context
-  if (isProduction) {
-    try {
-      const { env } = await getCloudflareContext({ async: true });
-      d1Db = (env as any).DB as D1Database;
-    } catch (e) {
-      console.error('Failed to get Cloudflare context:', e);
-    }
-  }
-
-  if (d1Db) {
-    // Cloudflare D1
-    return {
-      prepare: (sql: string) => {
-        const stmt = d1Db!.prepare(sql);
-        return {
-          get: async (...params: any[]) => {
-            const result = await stmt.bind(...params).first();
-            return result || null;
-          },
-          run: async (...params: any[]) => {
-            const result = await stmt.bind(...params).run();
-            return { lastInsertRowid: result.meta.last_row_id };
-          },
-          all: async (...params: any[]) => {
-            const result = await stmt.bind(...params).all();
-            return result.results || [];
-          }
-        };
-      }
-    };
-  } else if (localDb) {
+export function getDb() {
+  if (localDb) {
     // Local SQLite
     return {
       prepare: (sql: string) => {
