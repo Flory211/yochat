@@ -1,0 +1,17 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/api/admin/route": "app/api/admin/route.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/api/auth/register/route": "app/api/auth/register/route.js",
+  "/api/chats/route": "app/api/chats/route.js",
+  "/api/messages/[messageId]/route": "app/api/messages/[messageId]/route.js",
+  "/api/messages/route": "app/api/messages/route.js",
+  "/api/upload/route": "app/api/upload/route.js",
+  "/api/users/route": "app/api/users/route.js",
+  "/chats/[id]/page": "app/chats/[id]/page.js",
+  "/chats/page": "app/chats/page.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js"
+}

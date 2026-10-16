@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    const users = db.prepare('SELECT id, username, display_name, role FROM users ORDER BY display_name').all();
+    const db = getDb();
+    const users = await db.prepare('SELECT id, username, display_name, role FROM users ORDER BY display_name').all();
 
     return NextResponse.json({ users });
   } catch (error) {

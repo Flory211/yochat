@@ -5,6 +5,7 @@
   "observability": {
     "enabled": true
   },
+  "pages_build_output_dir": ".next",
   "d1_databases": [
     {
       "binding": "DB",

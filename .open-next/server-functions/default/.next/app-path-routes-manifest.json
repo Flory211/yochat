@@ -1,0 +1,17 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/admin/page": "/admin",
+  "/api/admin/route": "/api/admin",
+  "/api/auth/login/route": "/api/auth/login",
+  "/api/auth/register/route": "/api/auth/register",
+  "/api/chats/route": "/api/chats",
+  "/api/messages/[messageId]/route": "/api/messages/[messageId]",
+  "/api/messages/route": "/api/messages",
+  "/api/upload/route": "/api/upload",
+  "/api/users/route": "/api/users",
+  "/chats/[id]/page": "/chats/[id]",
+  "/chats/page": "/chats",
+  "/login/page": "/login",
+  "/page": "/"
+}

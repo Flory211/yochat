@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { hashPassword, createToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    const db = getDb();
     const { username, display_name, password } = await request.json();
 
     if (!username || !display_name || !password) {
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Пароль должен быть не менее 6 символов' }, { status: 400 });
     }
 
-    const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+    const existingUser = await db.prepare('SELECT id FROM users WHERE username = ?').get(username);
 
     if (existingUser) {
       return NextResponse.json({ error: 'Пользователь с таким именем уже существует' }, { status: 400 });
@@ -22,16 +23,16 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
-    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
+    const userCount = await db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
     const role = userCount.count === 0 ? 'admin' : 'student';
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO users (username, display_name, password_hash, role) VALUES (?, ?, ?, ?)'
     ).run(username, display_name, passwordHash, role);
 
     const userId = result.lastInsertRowid as number;
 
-    const user = db.prepare('SELECT id, username, display_name, role, is_banned FROM users WHERE id = ?').get(userId) as any;
+    const user = await db.prepare('SELECT id, username, display_name, role, is_banned FROM users WHERE id = ?').get(userId) as any;
 
     const token = await createToken({
       id: user.id,
@@ -42,24 +43,24 @@ export async function POST(request: NextRequest) {
     });
 
     // Создаём общий чат, если его ещё нет
-    const generalChat = db.prepare("SELECT id FROM chats WHERE type = 'general'").get() as any;
-    
+    const generalChat = await db.prepare("SELECT id FROM chats WHERE type = 'general'").get() as any;
+
     if (!generalChat) {
-      const chatResult = db.prepare(
+      const chatResult = await db.prepare(
         "INSERT INTO chats (name, description, type, created_by) VALUES (?, ?, ?, ?)"
       ).run('Общий чат', 'Общий чат для всех пользователей', 'general', userId);
 
       const chatId = chatResult.lastInsertRowid as number;
-      db.prepare('INSERT INTO chat_members (chat_id, user_id) VALUES (?, ?)').run(chatId, userId);
+      await db.prepare('INSERT INTO chat_members (chat_id, user_id) VALUES (?, ?)').run(chatId, userId);
     } else {
       // Добавляем пользователя в общий чат, если он ещё не там
-      const isMember = db.prepare('SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?').get(generalChat.id, userId);
+      const isMember = await db.prepare('SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?').get(generalChat.id, userId);
       if (!isMember) {
-        db.prepare('INSERT INTO chat_members (chat_id, user_id) VALUES (?, ?)').run(generalChat.id, userId);
+        await db.prepare('INSERT INTO chat_members (chat_id, user_id) VALUES (?, ?)').run(generalChat.id, userId);
       }
     }
 
-    db.prepare('INSERT INTO logs (user_id, action, details) VALUES (?, ?, ?)').run(userId, 'register', `Новый пользователь: ${username}`);
+    await db.prepare('INSERT INTO logs (user_id, action, details) VALUES (?, ?, ?)').run(userId, 'register', `Новый пользователь: ${username}`);
 
     const response = NextResponse.json({
       user: {

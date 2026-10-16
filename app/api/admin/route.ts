@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -13,21 +13,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 });
     }
 
+    const db = getDb();
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
 
     if (type === 'users') {
-      const users = db.prepare('SELECT id, username, display_name, role, is_banned, created_at FROM users ORDER BY created_at DESC').all();
+      const users = await db.prepare('SELECT id, username, display_name, role, is_banned, created_at FROM users ORDER BY created_at DESC').all();
       return NextResponse.json({ users });
     }
 
     if (type === 'chats') {
-      const chats = db.prepare('SELECT * FROM chats ORDER BY created_at DESC').all();
+      const chats = await db.prepare('SELECT * FROM chats ORDER BY created_at DESC').all();
       return NextResponse.json({ chats });
     }
 
     if (type === 'logs') {
-      const logs = db.prepare('SELECT * FROM logs ORDER BY created_at DESC LIMIT 100').all();
+      const logs = await db.prepare('SELECT * FROM logs ORDER BY created_at DESC LIMIT 100').all();
       return NextResponse.json({ logs });
     }
 
@@ -49,11 +50,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 });
     }
 
+    const db = getDb();
     const { action, user_id, is_banned } = await request.json();
 
     if (action === 'ban_user') {
-      db.prepare('UPDATE users SET is_banned = ? WHERE id = ?').run(is_banned ? 1 : 0, user_id);
-      db.prepare('INSERT INTO logs (user_id, action, details) VALUES (?, ?, ?)').run(user.id, 'ban_user', `Пользователь ${is_banned ? 'забанен' : 'разбанен'} ID: ${user_id}`);
+      await db.prepare('UPDATE users SET is_banned = ? WHERE id = ?').run(is_banned ? 1 : 0, user_id);
+      await db.prepare('INSERT INTO logs (user_id, action, details) VALUES (?, ?, ?)').run(user.id, 'ban_user', `Пользователь ${is_banned ? 'забанен' : 'разбанен'} ID: ${user_id}`);
       return NextResponse.json({ success: true });
     }
 

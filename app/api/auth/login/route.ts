@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { hashPassword, verifyPassword, createToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    const db = getDb();
     const { username, password } = await request.json();
 
     if (!username || !password) {
       return NextResponse.json({ error: 'Все поля обязательны' }, { status: 400 });
     }
 
-    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as any;
+    const user = await db.prepare('SELECT * FROM users WHERE username = ?').get(username) as any;
 
     if (!user) {
       return NextResponse.json({ error: 'Неверное имя пользователя или пароль' }, { status: 401 });
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
       is_banned: user.is_banned,
     });
 
-    db.prepare('INSERT INTO logs (user_id, action, details) VALUES (?, ?, ?)').run(user.id, 'login', 'Вход в систему');
+    await db.prepare('INSERT INTO logs (user_id, action, details) VALUES (?, ?, ?)').run(user.id, 'login', 'Вход в систему');
 
     const response = NextResponse.json({
       user: {

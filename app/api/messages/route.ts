@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
+    const db = getDb();
     const { searchParams } = new URL(request.url);
     const chatId = searchParams.get('chatId');
 
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'ID чата обязателен' }, { status: 400 });
     }
 
-    const isMember = db.prepare(
+    const isMember = await db.prepare(
       'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?'
     ).get(chatId, user.id);
 
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Вы не являетесь участником этого чата' }, { status: 403 });
     }
 
-    const messages = db.prepare(`
+    const messages = await db.prepare(`
       SELECT m.*, u.username, u.display_name, u.role
       FROM messages m
       JOIN users u ON m.user_id = u.id
@@ -47,13 +48,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
+    const db = getDb();
     const { chat_id, content, message_type = 'text', file_url, file_name, file_size } = await request.json();
 
     if (!chat_id || !content) {
       return NextResponse.json({ error: 'ID чата и содержимое обязательны' }, { status: 400 });
     }
 
-    const isMember = db.prepare(
+    const isMember = await db.prepare(
       'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?'
     ).get(chat_id, user.id);
 
@@ -61,14 +63,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Вы не являетесь участником этого чата' }, { status: 403 });
     }
 
-    const result = db.prepare(`
+    const result = await db.prepare(`
       INSERT INTO messages (chat_id, user_id, content, message_type, file_url, file_name, file_size)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(chat_id, user.id, content, message_type, file_url || null, file_name || null, file_size || null);
 
     const messageId = result.lastInsertRowid as number;
 
-    const message = db.prepare(`
+    const message = await db.prepare(`
       SELECT m.*, u.username, u.display_name, u.role
       FROM messages m
       JOIN users u ON m.user_id = u.id
