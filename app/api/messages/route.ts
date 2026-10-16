@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    const db = getDb();
+    const db = await getDb();
     const { searchParams } = new URL(request.url);
     const chatId = searchParams.get('chatId');
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    const db = getDb();
+    const db = await getDb();
     const { chat_id, content, message_type = 'text', file_url, file_name, file_size } = await request.json();
 
     if (!chat_id || !content) {

@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 // Cloudflare D1 types
 export interface D1Database {
@@ -22,14 +23,17 @@ export interface D1Result {
   };
 }
 
-// Check if running on Cloudflare Workers
-const isCloudflare = typeof globalThis !== 'undefined' && 
-                     typeof (globalThis as any).__WORKER_ENV__ !== 'undefined';
-
 // Local SQLite database (for development only)
 let localDb: any = null;
+let isProduction = false;
 
-if (!isCloudflare) {
+try {
+  isProduction = process.env.NODE_ENV === 'production';
+} catch {
+  isProduction = false;
+}
+
+if (!isProduction) {
   const dbPath = path.join(process.cwd(), 'data', 'yochat.db');
   const dataDir = path.dirname(dbPath);
 
@@ -99,18 +103,24 @@ if (!isCloudflare) {
 }
 
 // Unified database interface
-export function getDb(env?: { DB?: D1Database }) {
-  // Try to get D1 binding from various sources
-  const d1Db = env?.DB || 
-               (globalThis as any).__WORKER_ENV__?.DB ||
-               (globalThis as any).DB ||
-               (typeof process !== 'undefined' ? (process.env as any).DB : undefined);
+export async function getDb() {
+  let d1Db: D1Database | null = null;
+
+  // In production, get D1 binding from Cloudflare context
+  if (isProduction) {
+    try {
+      const { env } = await getCloudflareContext({ async: true });
+      d1Db = (env as any).DB as D1Database;
+    } catch (e) {
+      console.error('Failed to get Cloudflare context:', e);
+    }
+  }
 
   if (d1Db) {
     // Cloudflare D1
     return {
       prepare: (sql: string) => {
-        const stmt = d1Db.prepare(sql);
+        const stmt = d1Db!.prepare(sql);
         return {
           get: async (...params: any[]) => {
             const result = await stmt.bind(...params).first();

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 });
     }
 
-    const db = getDb();
+    const db = await getDb();
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 });
     }
 
-    const db = getDb();
+    const db = await getDb();
     const { action, user_id, is_banned } = await request.json();
 
     if (action === 'ban_user') {

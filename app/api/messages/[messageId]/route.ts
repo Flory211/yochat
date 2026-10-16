@@ -9,7 +9,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    const db = getDb();
+    const db = await getDb();
     const { searchParams } = new URL(request.url);
     const messageId = searchParams.get('messageId');
 

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    const db = getDb();
+    const db = await getDb();
     const chats = await db.prepare(`
       SELECT c.*,
         CASE
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    const db = getDb();
+    const db = await getDb();
     const { name, description, type, member_ids } = await request.json();
 
     // Если это личный чат, проверяем существует ли он уже

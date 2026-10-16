@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Необходима авторизация' }, { status: 401 });
     }
 
-    const db = getDb();
+    const db = await getDb();
     const users = await db.prepare('SELECT id, username, display_name, role FROM users ORDER BY display_name').all();
 
     return NextResponse.json({ users });

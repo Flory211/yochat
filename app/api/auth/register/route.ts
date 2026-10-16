@@ -4,7 +4,7 @@ import { hashPassword, createToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const db = getDb();
+    const db = await getDb();
     const { username, display_name, password } = await request.json();
 
     if (!username || !display_name || !password) {
