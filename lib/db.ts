@@ -1,7 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 // Cloudflare D1 types
 export interface D1Database {
