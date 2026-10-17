@@ -1,110 +1,32 @@
-# ЁЧат - Чат для онлайн-школы Ёшкола
+# React + TypeScript + Vite
 
-Современное веб-приложение для групповых чатов онлайн-школы с поддержкой текстовых сообщений, изображений и файлов.
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-## 🚀 Возможности
+Currently, two official plugins are available:
 
-- **Групповые чаты** - создавайте чаты для каждого класса
-- **Текстовые сообщения** - общение в реальном времени
-- **Обмен файлами** - отправка изображений и документов (до 10 МБ)
-- **Роли пользователей** - Админ, Учитель, Ученик
-- **Модерация** - удаление и редактирование сообщений, бан пользователей
-- **История сообщений** - сохранение всей переписки
-- **Push-уведомления** - мгновенные уведомления о новых сообщениях
-- **Современный дизайн** - желтый, белый, фиолетовый цвета
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## 🛠 Технологии
+## React Compiler
 
-- **Frontend**: Next.js 16 + React 19 + TypeScript
-- **Backend**: Next.js API Routes + Socket.io
-- **База данных**: SQLite (better-sqlite3)
-- **Стилизация**: Tailwind CSS
-- **Аутентификация**: JWT токены
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## 📦 Установка
+## Expanding the Oxlint configuration
 
-1. Установите зависимости:
-```bash
-npm install
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+
+```json
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
 ```
 
-2. Создайте файл `.env.local` (уже создан):
-```env
-JWT_SECRET=ваш-секретный-ключ
-PORT=3000
-NODE_ENV=development
-```
-
-## 🚀 Запуск
-
-### Режим разработки
-
-```bash
-npm run dev
-```
-
-Приложение будет доступно по адресу: http://localhost:3000
-
-### Продакшен
-
-```bash
-npm run build
-npm start
-```
-
-## 📱 Использование
-
-### Первый запуск
-
-1. Откройте http://localhost:3000
-2. Зарегистрируйтесь (первый пользователь автоматически становится админом)
-3. Создайте чат через кнопку "Создать чат"
-4. Добавьте участников через админ-панель
-
-### Роли пользователей
-
-- **Админ** - полное управление системой, создание чатов, управление пользователями
-- **Учитель** - создание чатов для своих классов, модерация сообщений
-- **Ученик** - участие в чатах, отправка сообщений
-
-### Админ-панель
-
-Доступна только для администраторов:
-- Управление пользователями (бан, смена ролей)
-- Просмотр всех чатов
-- Просмотр логов действий
-
-## 📁 Структура проекта
-
-```
-yochat/
-├── app/                    # Next.js страницы
-│   ├── api/               # API endpoints
-│   │   ├── auth/          # Аутентификация
-│   │   ├── chats/         # Чаты
-│   │   ├── messages/      # Сообщения
-│   │   ├── upload/        # Загрузка файлов
-│   │   └── admin/         # Админ-панель
-│   ├── chats/             # Страницы чатов
-│   ├── admin/             # Админ-панель
-│   └── login/             # Страница входа
-├── contexts/              # React контексты
-├── lib/                   # Утилиты и работа с БД
-├── data/                  # SQLite база данных
-└── public/uploads/        # Загруженные файлы
-```
-
-## 🔐 Безопасность
-
-- Пароли хэшируются с помощью bcrypt
-- JWT токены с сроком действия 7 дней
-- Проверка прав доступа для всех операций
-- Ограничение размера файлов (10 МБ)
-
-## 📝 Лицензия
-
-MIT
-
-## 👨‍💻 Разработка
-
-Создано для онлайн-школы Ёшкола (yochat.ru)
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.

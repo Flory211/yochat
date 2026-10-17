@@ -1,5 +1,4 @@
--- Чат схема базы данных для Cloudflare D1
-
+-- Create users table
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT UNIQUE NOT NULL,
@@ -10,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create chats table
 CREATE TABLE IF NOT EXISTS chats (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS chats (
   FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
+-- Create chat_members table
 CREATE TABLE IF NOT EXISTS chat_members (
   chat_id INTEGER,
   user_id INTEGER,
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS chat_members (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Create messages table
 CREATE TABLE IF NOT EXISTS messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   chat_id INTEGER NOT NULL,
@@ -45,6 +47,7 @@ CREATE TABLE IF NOT EXISTS messages (
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Create logs table
 CREATE TABLE IF NOT EXISTS logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER,
@@ -53,8 +56,3 @@ CREATE TABLE IF NOT EXISTS logs (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages(chat_id);
-CREATE INDEX IF NOT EXISTS idx_chat_members_user_id ON chat_members(user_id);
-CREATE INDEX IF NOT EXISTS idx_logs_user_id ON logs(user_id);

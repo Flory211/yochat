@@ -1,0 +1,11 @@
+name = "yochat-vite"
+main = "src/worker.ts"
+compatibility_date = "2026-10-16"
+
+[assets]
+directory = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yochat-db"
+database_id = "60d3018e-0f94-4b6c-a35f-b92a9eae8bc8"
