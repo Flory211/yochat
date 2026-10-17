@@ -1,11 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "yochat",
+  "name": "yochat-new",
   "compatibility_date": "2026-10-15",
   "observability": {
     "enabled": true
   },
-  "pages_build_output_dir": ".next",
+  "pages_build_output_dir": "dist",
   "d1_databases": [
     {
       "binding": "DB",
