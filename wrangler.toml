@@ -1,4 +1,4 @@
-name = "yochat-vite"
+name = "yochat-new"
 main = "src/worker.ts"
 compatibility_date = "2026-10-16"
 
