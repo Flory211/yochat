@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = 'https://yochat-worker.leogushinets.workers.dev/api';
 
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('token');
