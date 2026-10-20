@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: yochat-free
+    runtime: node
+    plan: free
+    buildCommand: node --check scripts/gateway.mjs
+    startCommand: node scripts/gateway.mjs
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 24.15.0
+      - key: UPSTREAM_URL
+        value: https://yochat.leogushinets.workers.dev
